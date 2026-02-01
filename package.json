@@ -8,9 +8,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "migrate": "knex migrate:latest",
-    "migrate:make": "knex migrate:make",
-    "scrape": "tsx src/scraper/index.ts"
+    "migrate": "knex migrate:latest --knexfile knexfile.ts",
+    "migrate:rollback": "knex migrate:rollback --knexfile knexfile.ts",
+    "migrate:make": "knex migrate:make --knexfile knexfile.ts",
+    "scrape": "tsx src/scraper/index.ts",
+    "db:setup": "mysql -u root -p < scripts/setup-database.sql"
   },
   "repository": {
     "type": "git",
