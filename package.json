@@ -1,0 +1,46 @@
+{
+  "name": "lcbo-inventory-scraper",
+  "version": "1.0.0",
+  "description": "LCBO product and inventory scraper - Node.js + TypeScript + Objection ORM + Puppeteer + MySQL",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "migrate": "knex migrate:latest",
+    "migrate:make": "knex migrate:make",
+    "scrape": "tsx src/scraper/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mr-todd/lcbo-inventory-scraper.git"
+  },
+  "keywords": [
+    "lcbo",
+    "scraper",
+    "inventory",
+    "typescript",
+    "objection",
+    "puppeteer"
+  ],
+  "author": "Mike Todd",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mr-todd/lcbo-inventory-scraper/issues"
+  },
+  "homepage": "https://github.com/mr-todd/lcbo-inventory-scraper#readme",
+  "dependencies": {
+    "@types/node": "^25.2.0",
+    "dotenv": "^17.2.3",
+    "knex": "^3.1.0",
+    "mysql2": "^3.16.2",
+    "objection": "^3.1.5",
+    "puppeteer": "^24.36.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1"
+  }
+}
