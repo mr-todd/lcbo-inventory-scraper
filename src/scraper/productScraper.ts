@@ -15,13 +15,32 @@ export class ProductScraper {
 
     try {
       // Navigate to LCBO search page (empty query shows all products)
+      // Coveo loads products dynamically via JavaScript
       await this.page.goto('https://www.lcbo.com/en/catalogsearch/result/#q=&t=Products', {
         waitUntil: 'networkidle2',
         timeout: 60000,
       });
 
-      logger.info('Waiting for products to load...');
-      await this.page.waitForSelector('.product-card', { timeout: 30000 });
+      logger.info('Waiting for Coveo search results to load...');
+
+      // Wait for Coveo's dynamic product containers to appear
+      await this.page.waitForSelector('.coveo-result-list .img-products, .CoveoResultList .img-products', {
+        timeout: 45000,
+      });
+
+      // Extra wait for Coveo JS to populate hrefs (they start as empty strings)
+      await this.delay(3000);
+
+      // Wait until at least one product link has a real href
+      await this.page.waitForFunction(
+        () => {
+          const links = document.querySelectorAll('.img-products a[href]');
+          return Array.from(links).some((a) => (a as HTMLAnchorElement).href.includes('/product/'));
+        },
+        { timeout: 30000 },
+      );
+
+      logger.info('Products loaded, scrolling to discover all...');
 
       // Scroll to load all products (lazy loading)
       await this.scrollToLoadAll();
@@ -44,20 +63,30 @@ export class ProductScraper {
   private async scrollToLoadAll(): Promise<void> {
     let previousHeight = 0;
     let currentHeight = await this.page.evaluate(() => document.body.scrollHeight);
+    let stableCount = 0;
 
-    while (previousHeight !== currentHeight) {
+    while (stableCount < 3) {
       previousHeight = currentHeight;
-      
+
       // Scroll to bottom
       await this.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      
-      // Wait for new content to load
-      await this.delay(2000);
-      
+
+      // Wait for Coveo to load new content (needs longer than static pages)
+      await this.delay(3000);
+
       currentHeight = await this.page.evaluate(() => document.body.scrollHeight);
+
+      if (previousHeight === currentHeight) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+      }
     }
 
-    logger.info('Finished loading all products');
+    const productCount = await this.page.evaluate(
+      () => document.querySelectorAll('.img-products').length,
+    );
+    logger.info(`Finished loading all products (${productCount} product containers found)`);
   }
 
   /**
@@ -65,10 +94,14 @@ export class ProductScraper {
    */
   private async extractProductUrls(): Promise<string[]> {
     return this.page.evaluate(() => {
-      const productCards = Array.from(document.querySelectorAll('.product-card a'));
-      return productCards
-        .map((card) => (card as HTMLAnchorElement).href)
+      // Coveo renders products inside .img-products containers
+      const productLinks = Array.from(document.querySelectorAll('.img-products a[href]'));
+      const urls = productLinks
+        .map((link) => (link as HTMLAnchorElement).href)
         .filter((url) => url && url.includes('/product/'));
+
+      // Deduplicate URLs (Coveo may render duplicate links per product)
+      return Array.from(new Set(urls));
     });
   }
 
